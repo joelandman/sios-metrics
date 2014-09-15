@@ -8,7 +8,7 @@ Dependencies:
 -------------
 
 *  Perl 5.10 or higher
-*  several Perl modules ([Config::JSON](http://search.cpan.org/~rizen/Config-JSON-1.5100/lib/Config/JSON.pm), [IPC::Run](http://search.cpan.org/~toddr/IPC-Run-0.92/lib/IPC/Run.pm), [Getopt::Lucid](http://search.cpan.org/~dagolden/Getopt-Lucid-1.05/lib/Getopt/Lucid.pm),
+*  several Perl modules ([Config::JSON](http://search.cpan.org/~rizen/Config-JSON-1.5100/lib/Config/JSON.pm), [IPC::Run](http://search.cpan.org/~toddr/IPC-Run-0.92/lib/IPC/Run.pm), [Getopt::Lucid](http://search.cpan.org/~dagolden/Getopt-Lucid-1.05/lib/Getopt/Lucid.pm) )
 
     
 Installing dependencies:
@@ -24,13 +24,6 @@ We will simplify this in the future with an installer, and likely snapshots of t
   *  [StrawBerry Perl](http://strawberryperl.com/)
   *  [Cygwin](https://www.cygwin.com/) and installing the Perl components
 
-
-### OS ReadLine library ###
-
-Should be included in your distribution/OS
-*    Linux:    Included in distribution, make sure the /readline/i packages (library/development) are installed
-*    MacOSX:   Included in distribution, make sure the /readline/i packages (library/development) are installed
-*    Windows:  Cygwin or http://gnuwin32.sourceforge.net/packages/readline.htm 
 
 ### Perl modules ###
 Some of these modules are not included in the package manager distributions, so you will need to use CPAN to install (let it autoconfigure for you, and use the sudo mechanism)
