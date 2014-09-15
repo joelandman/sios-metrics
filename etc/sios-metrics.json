@@ -1,0 +1,26 @@
+# config-file-type: JSON 1
+{
+   "global" : {
+      "log_to_file" : "1",
+      "log_name" : "/tmp/metrics-$system.log",
+    },
+
+    "db" : {
+      "host"    : "192.168.5.117",
+      "port"    : "2003",
+      "proto"   : "tcp"
+    },
+
+   "metrics" : {      
+      "uptime" : {
+          "command"   : "/home/landman/work/development/gui/plugins/uptime.pl",
+          "interval"  : 5,
+          "timeout"   : 2                
+      },
+      "MHz" : {
+          "command"   : "/home/landman/work/development/gui/plugins/MHz.pl",
+          "interval"  : 4,
+          "timeout"   : 2                
+      },   
+   } 
+}
