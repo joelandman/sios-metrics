@@ -51,12 +51,30 @@
                "timeout"    : 60
       },
       "ptest" : {
-               "enabled"   : 1,
+               "enabled"   : 0,
                "command"   : "plugins/ptest.pl",
                "persistent" : 1,
                "interval"   : 1,
 	       "xmit"	    : 0,
                "timeout"    : 60
-      }  
+      },
+      "mdadm" : {
+         "enabled"    : 1,
+         "command"    : "plugins/mdadm.pl",
+         "interval"   : 300,
+         "timeout"    : 30
+      },
+      "smart" : {
+         "enabled"    : 1,
+         "command"    : "plugins/smart-disks.pl",
+         "interval"   : 3600,
+         "timeout"    : 300
+      },
+      "filesys" : {
+         "enabled"    : 1,
+         "command"    : "plugins/file_systems.pl",
+         "interval"   : 300,
+         "timeout"    : 60
+      },
    } 
 }
