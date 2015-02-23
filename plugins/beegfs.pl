@@ -42,4 +42,3 @@ usleep(2000000); # sleep for 2 seconds, then issue a kill and clean up
 $h->kill_kill;
 usleep(2000000);
 undef $h;
-

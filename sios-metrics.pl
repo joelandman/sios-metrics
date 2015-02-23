@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/opt/scalable/bin/perl
 
 # Copyright (c) 2012-2014 Scalable Informatics
 # This is free software, see the gpl-2.0.txt 
@@ -47,7 +47,7 @@ my $run_dir           : shared;
 my (@metrics,$metric,$thr_name,$met,$metrics_hash);
 my (%mtr,$proto,$port,$mfh,$mstate);
 my ($host,$user,$pass,$output,$config_file,$cf_h);
-my ($config,$c,$_fqpn);
+my ($config,$c,$_fqpni,$nolog);
 
 chomp($hostname   = `hostname`);
 
@@ -96,7 +96,8 @@ my @command_line_specs = (
                      Switch("version"),
                      Switch("debug"),
                      Switch("verbose"),
-                     Param("run_dir")
+                     Param("run_dir"),
+		     Switch("nolog"),
                      );
 
 # parse all command line options
@@ -115,8 +116,9 @@ $debug      = $opt->get_debug   ? true : false;
 $verbose    = $opt->get_verbose ? true : false;
 $help       = $opt->get_help    ? true : false;
 $version    = $opt->get_version ? true : false;
+$nolog	    = $opt->get_nolog   ? true : false;
 $config_file= $opt->get_config  ? $opt->get_config  : config_path;
-
+$nolog	    = false if ($debug);
 
 $done       	= false;
 
@@ -146,7 +148,7 @@ foreach $metric (@metrics)
       $thr_name 	= sprintf 'metric.%s',$metric;
       push @list_of_metrics,File::Spec->catfile($run_dir,$metric);
       $mtr{File::Spec->catfile($run_dir,$metric)} = $metric;
-      printf "D[%i]  metric: %s -> \'%s\'\n",$$,$thr_name,Dumper($met);
+      printf "D[%i]  metric: %s -> \'%s\'\n",$$,$thr_name,Dumper($met) if ($debug);
       $thr->{$thr_name}	= threads->create({'void' => 1},
         'measure',$met,$metric,$host,$port,$proto);
    }
@@ -208,8 +210,8 @@ sub measure {
     # connect to the graphite DB
     $db       = Scalable::Graphite->new();
     $ret = $db->open({host => $host, port => $port, proto => $proto , debug => $debug });  
-    printf "D[%i]  Graphite open returned \'%s\'\n",$$,$ret->{result};
-
+    printf "D[%i]  Graphite open returned \'%s\'\n",$$,$ret->{result} if ($debug);
+ 
 
     $done	          = false;
     # microseconds to sleep before waking, defaults to 15 seconds
@@ -226,14 +228,16 @@ sub measure {
     
     printf "D[%i] metric=%s parameters\n\t\tinterval\t= %.2f s\n\t\ttimeout\t\t= %.2f s\n\t\tpersistent\t= %s\n\t\txmit\t\t= %s\n",
     $$,$thr_name,$interval/1000000,$timeout/1000000,($persistent ? "true" : "false"),
-    ($xmit ? "true" : "false"), if ($debug);
+    ($xmit ? "true" : "false") if ($debug);
       
 
     # all we need to do is to run the command, within a specific timeout,
     # and then report the results
     
     $out_fn	  = sprintf '%s.log',$name;
-    open($out_fh,">>".$out_fn)   if ($out_fn);
+    if (!$nolog) {
+    	open($out_fh,">>".$out_fn)   if ($out_fn);
+    }
     @cmd			= split(/\s+/,$met->{command});
     $dt       = 0;
     $t0       = [gettimeofday];
@@ -283,10 +287,12 @@ sub measure {
             
 
             @lines	= split(/\n/,$out);
-	          chomp(@lines);
+            chomp(@lines);
             $out    = "";
+	    if (!$nolog) {
 	          open($out_fh,">>".$out_fn)   if ($out_fn);
-		        my $_ts;
+ 	    }
+	    my $_ts;
             if ($persistent) 
               {
                 # scan backwards through lines for the sync frame ...
@@ -306,11 +312,16 @@ sub measure {
             foreach my $line (@lines) 
               {
                 # get timestamp data
-                printf $out_fh "%i %s\n",$timestamp,$line if ($out_fn);                   
+		if (!$nolog) {
+                   printf $out_fh "%i %s\n",$timestamp,$line if ($out_fn);                   
+		}
                 printf "D[%i] %i ++++ %s ----\n",$$,$timestamp,$line if ($debug);
               }   
             printf "D[%i] starting parsing\n\n",$$ if ($debug) ;
-	          close($out_fh) if ($output);
+	      
+	    if (!$nolog) {
+		close($out_fh) if ($output);
+	    }
 
             # send metrics to db
             foreach my $line (@lines) 
