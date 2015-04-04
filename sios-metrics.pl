@@ -223,6 +223,12 @@ sub measure {
     # persistent or not (e.g. sample output at interval from a plugin that runs continuously)
     my $persistent  = (defined($met->{persistent}) ? $met->{persistent} : 0) ; # defaults to non-persistent
 
+    # grab data from a file at the interval, rather than running code
+    my $use_file    = (defined($met->{use_file}) ? $met->{use_file} : 0) ; # defaults to non-file
+
+    # cannot be persisent and use_file simultaneously ... return to caller if this happens
+    return if ($persistent && $use_file);
+
     my ($in,$out,$err,@lines,@times,$ts,$h,$ipmi,@cmd,$out_fh,$out_fn);
     my ($lineout,$r,$mname,$mvalue,$dval);
     
@@ -252,31 +258,40 @@ sub measure {
 
     do
        {
-
-       
         if (!$persistent) {
-          # create the run harness
-          $out        = "";
-          $in         = "";
-          undef $h;
-          printf "D[%i] TS=%i starting run harness for metric=%s\n",$$,$timestamp,$name if ($debug);
-          $h = start \@cmd, '<pty<', \$in, '>pty>', \$out, timeout($timeout), debug=>$debug;
-          printf "time: %f\n",$timestamp if (false);
+          if (!$use_file) {
+              # create the run harness
+              $out        = "";
+              $in         = "";
+              undef $h;
+              printf "D[%i] TS=%i starting run harness for metric=%s\n",$$,$timestamp,$name if ($debug);
+              $h = start \@cmd, '<pty<', \$in, '>pty>', \$out, timeout($timeout), debug=>$debug;
+              printf "time: %f\n",$timestamp if (false);
+            }           
         }
-          
-        if ($persistent) {
-            $h->pump_nb if ($h->pumpable);
-           }  
-         else
+        
+        if (!$use_file) {         
+          if ($persistent) {
+              $h->pump_nb if ($h->pumpable);
+             }  
+           else
+             {
+              $h->pump while ($h->pumpable);
+              $h->finish;
+             }
+           }
+          else
            {
-            $h->pump while ($h->pumpable);
-            $h->finish;
+            eval {
+                  open(my $fn,"<".$use_file);
+                  $out = <$fn>;
+                  close($fn);
+                 }
            }
                 
 	      $done = false;
         
-        if ($out ne "")
-           {
+        if ($out ne "") {
             # output will be 1 or more lines of key:value (single value per line)
             # persistent runs will have a sync line of the form
             #   ^#### sync:timestamp\n 
@@ -289,10 +304,10 @@ sub measure {
             @lines	= split(/\n/,$out);
             chomp(@lines);
             $out    = "";
-	    if (!$nolog) {
-	          open($out_fh,">>".$out_fn)   if ($out_fn);
- 	    }
-	    my $_ts;
+      	    if (!$nolog) {
+      	          open($out_fh,">>".$out_fn)   if ($out_fn);
+       	    }
+            my $_ts;
             if ($persistent) 
               {
                 # scan backwards through lines for the sync frame ...
@@ -312,16 +327,16 @@ sub measure {
             foreach my $line (@lines) 
               {
                 # get timestamp data
-		if (!$nolog) {
+		            if (!$nolog) {
                    printf $out_fh "%i %s\n",$timestamp,$line if ($out_fn);                   
-		}
+		            }
                 printf "D[%i] %i ++++ %s ----\n",$$,$timestamp,$line if ($debug);
               }   
             printf "D[%i] starting parsing\n\n",$$ if ($debug) ;
 	      
-	    if (!$nolog) {
-		close($out_fh) if ($output);
-	    }
+            if (!$nolog) {
+		          close($out_fh) if ($output);
+	          }
 
             # send metrics to db
             foreach my $line (@lines) 
@@ -346,7 +361,7 @@ sub measure {
 		            printf "D[%i] TS=%i send results = %s\n\n",$$,$timestamp,Dumper($rc) if ($xmit && $debug);
               }
           
-      }
+        }
         $dt = tv_interval ($t0,[gettimeofday])*1000000.0; # interval spent in execution in us
         $si = ( ($interval - $dt) < 0.1* $interval ? $interval : $interval - $dt);
          
@@ -354,9 +369,9 @@ sub measure {
 	      printf "D[%i] TS=%i sleeping for %-.3f s for metric=%s\n",$$,$timestamp,$si/1000000.0,$name if ($debug);                   
         usleep($si);    
         $t0 = [gettimeofday];
-       } until ($done);
-       undef $db;
-       printf "D[%i] TS=%i exiting measure loop for metric=%s\n",$$,$timestamp,$name if ($debug);
+      } until ($done);
+      undef $db;
+      printf "D[%i] TS=%i exiting measure loop for metric=%s\n",$$,$timestamp,$name if ($debug);
 }
 
 sub TS {

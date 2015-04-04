@@ -21,25 +21,25 @@
       "uptime" : {
 	  "db"	      : ["default","second"],
 	  "enabled"   : 0,
-          "command"   : "/home/landman/work/development/gui/plugins/uptime.pl",
+          "command"   : "plugins/uptime.pl",
           "interval"  : 5,
           "timeout"   : 2                
       },
       "MHz" : {
 	  "enabled"   : 0,
-          "command"   : "/home/landman/work/development/gui/plugins/MHz.pl",
+          "command"   : "plugins/MHz.pl",
           "interval"  : 4,
           "timeout"   : 2                
       },
       "HW-Raid" : {
 	  "enabled"   : 0,
-          "command"   : "/opt/scalable/sios-metrics/plugins/HW-Raid.pl",
+          "command"   : "plugins/HW-Raid.pl",
           "interval"  : 300,
           "timeout"   : 60
       },
       "HWR-disks" : {
 	  "enabled"   : 0,
-          "command"   : "/opt/scalable/sios-metrics/plugins/HWR-disks.pl",
+          "command"   : "plugins/HWR-disks.pl",
           "interval"  : 300,
           "timeout"   : 150
       },
@@ -57,6 +57,14 @@
                "interval"   : 1,
 	       "xmit"	    : 0,
                "timeout"    : 60
+      },
+      "bw_iops" : {
+               "enabled"   : 1,
+               "command"   : "plugins/disk_BW_IOPS.pl",
+               "persistent" : 1,
+               "interval"   : 1,
+               "xmit"       : 1,
+               "timeout"    : 30
       },
       "mdadm" : {
          "enabled"    : 1,
