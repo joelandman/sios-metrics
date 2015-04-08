@@ -25,6 +25,13 @@ foreach $line (sort @mounts) {
     next if ($line =~ /^proc/);
     next if ($line =~ /^sys/);
     next if ($line =~ /^dev/);
+    next if ($line =~ /\sys\/\fs\/cgroup/);
+    next if ($line =~ /tmpfs/);
+    next if ($line =~ /^fusectl/);
+    next if ($line =~ /cifs/);
+    next if ($line =~ /rpc_pipefs/);
+    next if ($line =~ /binfmt_misc/);
+
     @mrec=split(/\s+/,$line);
     $h->{$mrec[0]}->{mountpoint}=$mrec[1];
     $h->{$mrec[0]}->{fstype}=$mrec[2];
