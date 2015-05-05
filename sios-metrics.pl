@@ -48,6 +48,7 @@ my (@metrics,$metric,$thr_name,$met,$metrics_hash);
 my (%mtr,$proto,$port,$mfh,$mstate);
 my ($host,$user,$pass,$output,$config_file,$cf_h);
 my ($config,$c,$_fqpni,$nolog);
+my $shared_sig	      : shared;
 
 chomp($hostname   = `hostname`);
 
@@ -55,37 +56,29 @@ chomp($hostname   = `hostname`);
 # signal catcher
 # SIGHUP is a graceful exit, SIGKILL and SIGINT are immediate
 my (@sigset,@action);
-foreach (0 .. 2 ) { $sigset[$_] = POSIX::SigSet->new() };
-$action[0] = POSIX::SigAction->new('sig_handler_graceful' ,$sigset[0],&POSIX::SA_NODEFER);
-$action[1] = POSIX::SigAction->new('sig_handler_immediate',$sigset[1],&POSIX::SA_NODEFER);
-$action[2] = POSIX::SigAction->new('sig_handler_immediate',$sigset[2],&POSIX::SA_NODEFER);
-POSIX::sigaction(&POSIX::SIGHUP,  $action[0]);
-POSIX::sigaction(&POSIX::SIGKILL, $action[1]);
-POSIX::sigaction(&POSIX::SIGINT,  $action[2]);
-
-sub sig_handler_graceful {
+sub sig_handler_any {
 	our $out_fh;
-	print STDERR "caught graceful termination signal\n";
-	$done	= true;
-  close($out_fh) if (defined($out_fh) && $out_fh);
-	# exit gracefully
+	$shared_sig++;
+	print STDERR "caught termination signal\n";
+        $done   = true;
+        close($out_fh) if (defined($out_fh) && $out_fh);
+	printf STDERR "Waiting 30 seconds to clean up\n";
+        if ($shared_sig == 1) {	sleep 30; }
+	foreach $metric (@metrics)
+          {
+		printf "killing metric=%s\n",$metric;
+                $met    = $metrics_hash->{$metric};
+                $thr_name   = sprintf 'metric.%s',$metric;
+                $thr->{$thr_name}->join(); 
+          }
+        # exit -1;
+        # exit immediately
+        die "thread caught termination signal\n";
 }
-
-sub sig_handler_immediate {
-	our $out_fh;
-	print STDERR "caught immediate termination signal\n";
-	$done	= true;
-  close($out_fh) if (defined($out_fh) && $out_fh);
-  foreach $metric (@metrics)
-   {
-      $met    = $metrics_hash->{$metric};
-      $thr_name   = sprintf 'metric.%s',$metric;
-      $thr->{$thr_name}->join(); 
-   }
-	# exit -1;
-	# exit immediately
-	die "thread caught termination signal\n";
-}
+$SIG{HUP} = \&sig_handler_any;
+$SIG{KILL} = \&sig_handler_any;
+$SIG{INT} = \&sig_handler_any;
+$SIG{QUIT} = \&sig_handler_any;
 
 
 
@@ -366,8 +359,17 @@ sub measure {
         $si = ( ($interval - $dt) < 0.1* $interval ? $interval : $interval - $dt);
          
         printf "D[%i] TS=%i dt = %-.4f\n",$$,$timestamp,$dt if($debug);
-	      printf "D[%i] TS=%i sleeping for %-.3f s for metric=%s\n",$$,$timestamp,$si/1000000.0,$name if ($debug);                   
-        usleep($si);    
+        printf "D[%i] TS=%i sleeping for %-.3f s for metric=%s\n",$$,$timestamp,$si/1000000.0,$name if ($debug);                   
+        if (defined($shared_sig)) 
+	   {
+	    $done = true;
+	    printf "D[%i] SIGNAL %s at TS=%i caught and killing metric=%s\n",$$,$shared_sig,$timestamp,$name;
+	    kill_kill $h, grace => 1 ;
+	   }
+	 else
+           { 
+            usleep($si);    
+	   }
         $t0 = [gettimeofday];
       } until ($done);
       undef $db;
