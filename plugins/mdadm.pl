@@ -36,7 +36,7 @@ foreach $de (sort keys %dir) {
         $data = lc(&_get_contents($fn));
         $ee = $ce;
         $ee =~ s/\//./g;
-        printf "md.%s.%s:%i\n",$de,$ee,$data;
+        printf "raid.oem.mdadm.device.%s.%s:%i\n",$de,$ee,$data;
     }
     untie %md;
 }

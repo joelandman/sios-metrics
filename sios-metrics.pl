@@ -35,6 +35,7 @@ my $vers    = "0.8";
 my ($opt,$rc,$version,$thr);
 my $debug 		        : shared;
 my $verbose           : shared;
+my $harness           : shared;
 my $help;
 my $dir               : shared;
 my $system_interval	  : shared;
@@ -42,6 +43,7 @@ my $block_interval    : shared;
 my $done              : shared;
 my $timestamp         : shared;
 my $hostname          : shared;
+my $machname	      : shared;
 my @list_of_metrics   : shared;
 my $run_dir           : shared;
 my (@metrics,$metric,$thr_name,$met,$metrics_hash);
@@ -62,19 +64,11 @@ sub sig_handler_any {
 	print STDERR "caught termination signal\n";
         $done   = true;
         close($out_fh) if (defined($out_fh) && $out_fh);
-	printf STDERR "Waiting 30 seconds to clean up\n";
-        if ($shared_sig == 1) {	sleep 30; }
-	foreach $metric (@metrics)
-          {
-		printf "killing metric=%s\n",$metric;
-                $met    = $metrics_hash->{$metric};
-                $thr_name   = sprintf 'metric.%s',$metric;
-                $thr->{$thr_name}->join(); 
-          }
-        # exit -1;
-        # exit immediately
+	printf STDERR "Waiting 10 seconds to clean up\n";
+        if ($shared_sig == 1) {	sleep 10; }
         die "thread caught termination signal\n";
 }
+
 $SIG{HUP} = \&sig_handler_any;
 $SIG{KILL} = \&sig_handler_any;
 $SIG{INT} = \&sig_handler_any;
@@ -91,6 +85,7 @@ my @command_line_specs = (
                      Switch("verbose"),
                      Param("run_dir"),
 		     Switch("nolog"),
+		     Param("name")
                      );
 
 # parse all command line options
@@ -112,6 +107,7 @@ $version    = $opt->get_version ? true : false;
 $nolog	    = $opt->get_nolog   ? true : false;
 $config_file= $opt->get_config  ? $opt->get_config  : config_path;
 $nolog	    = false if ($debug);
+$machname	    = $opt->get_name    ? $opt->get_name : $hostname;
 
 $done       	= false;
 
@@ -189,7 +185,7 @@ sub version {
 
 sub measure {
     my ($met,$name,$host,$port,$proto)		= @_;
-    my ($rec,@c,$db,$ret,$t0,$dt,$si,@frame,$xmit);
+    my ($rec,@c,$db,$ret,$t0,$dt,$si,@frame,$xmit,$nint,$sc);
 
     # need to create an array of open db devices based upon the 
     # db array in the config file
@@ -209,6 +205,7 @@ sub measure {
     $done	          = false;
     # microseconds to sleep before waking, defaults to 15 seconds
     my $interval    = $met->{interval} * 1000000 || 15000000; 
+    my $check_interval = 250000; # microseconds to sleep before checking for signal, defaults to 0.25 seconds
 
     # microseconds for timeout of command, defaults to 5 seconds
     my $timeout     = $met->{timeout}  * 1000000 ||  5000000;
@@ -244,7 +241,7 @@ sub measure {
     if ($persistent) {
       undef $h;
       printf "D[%i] TS=%i starting persistent run harness for metric=%s\n",$$,$timestamp,$name if ($debug);
-      $h = start \@cmd, '<pty<', \$in, '>pty>', \$out, timeout($timeout), debug=>$debug;
+      $h = start \@cmd, \$in, \$out, \$err,  timeout($timeout), debug=>$debug;
       $out        = "";
       $in         = "";
     }
@@ -258,19 +255,18 @@ sub measure {
               $in         = "";
               undef $h;
               printf "D[%i] TS=%i starting run harness for metric=%s\n",$$,$timestamp,$name if ($debug);
-              $h = start \@cmd, '<pty<', \$in, '>pty>', \$out, timeout($timeout), debug=>$debug;
+              $h = start \@cmd, \$in, \$out, \$err, timeout($timeout), debug=>$debug;
               printf "time: %f\n",$timestamp if (false);
             }           
         }
         
         if (!$use_file) {         
           if ($persistent) {
-              $h->pump_nb if ($h->pumpable);
+              eval { $h->pump_nb if ($h->pumpable) };
              }  
            else
              {
-              $h->pump while ($h->pumpable);
-              $h->finish;
+              eval { $h->pump while ($h->pumpable); $h->finish; };
              }
            }
           else
@@ -279,10 +275,10 @@ sub measure {
                   open(my $fn,"<".$use_file);
                   $out = <$fn>;
                   close($fn);
-                 }
+                 };
            }
                 
-	      $done = false;
+	  $done = false;
         
         if ($out ne "") {
             # output will be 1 or more lines of key:value (single value per line)
@@ -297,9 +293,7 @@ sub measure {
             @lines	= split(/\n/,$out);
             chomp(@lines);
             $out    = "";
-      	    if (!$nolog) {
-      	          open($out_fh,">>".$out_fn)   if ($out_fn);
-       	    }
+      	    if (!$nolog) { open($out_fh,">>".$out_fn)   if ($out_fn); }
             my $_ts;
             if ($persistent) 
               {
@@ -327,9 +321,7 @@ sub measure {
               }   
             printf "D[%i] starting parsing\n\n",$$ if ($debug) ;
 	      
-            if (!$nolog) {
-		          close($out_fh) if ($output);
-	          }
+            if (!$nolog) { close($out_fh) if ($output); }
 
             # send metrics to db
             foreach my $line (@lines) 
@@ -345,7 +337,7 @@ sub measure {
                 printf "D[%i] :\tline\t=\'%s\'\n\t\tmname\t=\'%s\'\n\t\tmvalue\t= \'%s\'\n\n",
                 $$,$line,$mname,$mvalue if ($debug);
                 
-                $mname = join(".",$hostname,$mname);
+                $mname = $machname.".".$mname;
                 $rec->{metric}  = $mname;
                 $rec->{value}   = $mvalue;
                 $rec->{time}    = $timestamp;
@@ -360,19 +352,27 @@ sub measure {
          
         printf "D[%i] TS=%i dt = %-.4f\n",$$,$timestamp,$dt if($debug);
         printf "D[%i] TS=%i sleeping for %-.3f s for metric=%s\n",$$,$timestamp,$si/1000000.0,$name if ($debug);                   
-        if (defined($shared_sig)) 
-	   {
-	    $done = true;
-	    printf "D[%i] SIGNAL %s at TS=%i caught and killing metric=%s\n",$$,$shared_sig,$timestamp,$name;
-	    kill_kill $h, grace => 1 ;
-	   }
-	 else
-           { 
-            usleep($si);    
-	   }
+                    
+        # do something morally equivalent to this
+        # but waking every check interval until 
+        # we have equalled or exceeded the sleep interval ($si)
+        # this is so we can check for signals and terminate correctly.
+        #usleep($si);
+        $nint = int($si/$check_interval); #number of check_intervals in the sleep interval
+        printf "D[%i]  si=%.3fs, nint=%i\n",$$,$si,$nint if($debug);
+        for($sc = 0; $sc <= $nint; $sc++) {
+          usleep($check_interval);
+          if (defined($shared_sig)) 
+             {
+              $done = true;
+              printf "D[%i] SIGNAL %s at TS=%i caught and killing metric=%s\n",$$,$shared_sig,$timestamp,$name;
+              kill_kill $h, grace => 1 ;
+             }
+        }
         $t0 = [gettimeofday];
       } until ($done);
       undef $db;
+      eval {kill_kill $h, grace => 1 ;};
       printf "D[%i] TS=%i exiting measure loop for metric=%s\n",$$,$timestamp,$name if ($debug);
 }
 

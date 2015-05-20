@@ -16,6 +16,6 @@ foreach $ctl (1 .. ($#raids + 1)) {
  	$state = -1; # defaults to failed
  	$state =  1 if ($fields[6] =~ /Normal/i);
  	$state =  0 if ($fields[6] =~ /Degraded/);
- 	printf "controller_%i.%s.state:%s\n",$ctl,$fields[1],$state;
+ 	printf "raid.oem.areca.controller.%i.%s.state:%s\n",$ctl,$fields[1],$state;
  }
 }

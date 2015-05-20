@@ -48,7 +48,7 @@ sub send {
 	$msg = join(" ",$m->{metric},$m->{value},$m->{time});
 	printf "\n\nD[%i] Scalable::Graphite send +++ %s --- \n\n\n\n",$$,$msg if ($self->{debug});
 	$rc = $self->{graphite}->send($msg."\n");
-	printf "\n\nD[%i] Scalable::Graphite send complete\n",$$;
+	printf "\n\nD[%i] Scalable::Graphite send complete\n",$$ if ($self->{debug});
 	#$rc = `echo $msg | nc $self->{db}->{host} $self->{db}->{port}`; 
 	$ret->{'result'} 		= 'success';
 	$ret->{'message'}		= $rc;

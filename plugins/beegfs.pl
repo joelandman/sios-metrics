@@ -30,11 +30,11 @@ while ($h->pumpable) {
   @fields = split(/\s+/,$line);
   printf "\n#### sync:%i\n",time;
   if (@fields) {
-   printf "write.MBps:%.3f\n",$fields[1]/1000.0;
-   printf "read.MBps:%.3f\n",$fields[2]/1000.0;
-   printf "requests:%i\n",$fields[3];
-   printf "qlen:%i\n",$fields[4];
-   printf "busy:%i\n",$fields[5];
+   printf "pfs.write_BW:%.3f\n",$fields[1]*1000.0;
+   printf "pfs.read_BW:%.3f\n",$fields[2]*1000.0;
+   printf "pfs.requests:%i\n",$fields[3];
+   printf "pfs.qlen:%i\n",$fields[4];
+   printf "pfs.busy:%i\n",$fields[5];
   }
 }
 $h->finish;

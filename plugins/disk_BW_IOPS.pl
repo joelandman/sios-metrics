@@ -76,7 +76,7 @@ do
 		$twbw		+= $write;
 		$triops		+= $riop;
 		$twiops		+= $wiop;
-		printf "read_BW.%s:%f\nwrite_BW.%s:%f\ntotal_BW.%s:%f\nread_IOP.%s:%f\nwrite_IOP.%s:%f\n",
+		printf "disk.read_BW.%s:%f\ndisk.write_BW.%s:%f\ndisk.total_BW.%s:%f\ndisk.read_IOP.%s:%f\ndisk.write_IOP.%s:%f\n",
 		$blockdev,$read/$MB,
 		$blockdev,$write/$MB,
 		$blockdev,($read+$write)/$MB,
@@ -84,7 +84,7 @@ do
 		$blockdev,$wiop;
 	 }
 	
-	printf "read_BW.total:%f\nwrite_BW.total:%f\nread_IOP.total:%f\nwrite_IOP.total:%f\n\n",
+	printf "disk.read_BW.total:%f\ndisk.write_BW.total:%f\ndisk.read_IOP.total:%f\ndisk.write_IOP.total:%f\n\n",
 		$trbw/$MB,$twbw/$MB,$triops,$twiops;
 	}
 	

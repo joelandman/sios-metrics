@@ -51,7 +51,7 @@
                "timeout"    : 60
       },
       "ptest" : {
-               "enabled"   : 0,
+               "enabled"   : 1,
                "command"   : "plugins/ptest.pl",
                "persistent" : 1,
                "interval"   : 1,
@@ -59,7 +59,7 @@
                "timeout"    : 60
       },
       "bw_iops" : {
-               "enabled"   : 1,
+               "enabled"   : 0,
                "command"   : "plugins/disk_BW_IOPS.pl",
                "persistent" : 1,
                "interval"   : 1,
@@ -67,19 +67,19 @@
                "timeout"    : 30
       },
       "mdadm" : {
-         "enabled"    : 1,
+         "enabled"    : 0,
          "command"    : "plugins/mdadm.pl",
          "interval"   : 300,
          "timeout"    : 30
       },
       "smart" : {
-         "enabled"    : 1,
+         "enabled"    : 0,
          "command"    : "plugins/smart-disks.pl",
          "interval"   : 3600,
          "timeout"    : 300
       },
       "filesys" : {
-         "enabled"    : 1,
+         "enabled"    : 0,
          "command"    : "plugins/file_systems.pl",
          "interval"   : 300,
          "timeout"    : 60

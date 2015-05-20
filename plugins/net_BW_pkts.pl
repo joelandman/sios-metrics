@@ -35,7 +35,7 @@ my ($reads,$writes,$r_iops,$w_iops,$npts,$max_saved_data,$bwf,@stamp);
 my ($tiop,$count,$firstpass,@hbwr,@hbww);
 my @fields = qw(device rx_bytes rx_packets rx_errs rx_drop rx_fifo 
 			   rx_frame rx_compressed rx_multicast
-			   tx_bytes tx_packets tx_errs, tx_drop 
+			   tx_bytes tx_packets tx_errs tx_drop 
 			   tx_fifo tx_collisions tx_carrier_drops
 			   tx_compressed
 			   );
@@ -97,7 +97,7 @@ do
 	 {
 	   foreach my $f (@fields) {
 	   	 next if ($f =~ /device/);
-	   	 printf "net.%s.%s:%s\n",$k,$f,$dev_delta->{$k}->{$f};
+	   	 printf "network.interface.%s.%s:%s\n",$k,$f,$dev_delta->{$k}->{$f};
 	   }		
 	 }
 	

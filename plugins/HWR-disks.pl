@@ -3,7 +3,7 @@
 use SI::Utils;
 use strict;
 my (@lines,$line,@fields,$field,@raids,$raid,$ctl,$state,@cards,$card);
-my ($size,$usage,$model,$slot,$binding,$drv,$free,$failed,$state);
+my ($size,$usage,$model,$slot,$binding,$drv,$free,$failed);
 #  hardware raid disks 
 @raids	= `/opt/scalable/sbin/lsraid.pl`;
 foreach $ctl (1 .. ($#raids + 1)) {
@@ -22,12 +22,12 @@ foreach $ctl (1 .. ($#raids + 1)) {
 		$binding= "none" if ($binding =~ /N.A./);
 		$free++ 	if ($binding =~ /free/i);
 		$failed++	if ($binding =~ /fail/i);
-		printf "controller_%i.drv_%i.size:%i\n",$ctl,$drv,$size;
-		printf "controller_%i.drv_%i.slot:%i\n",$ctl,$drv,$slot;
-		printf "controller_%i.drv_%i.model:%i\n",$ctl,$drv,$model;
-		printf "controller_%i.drv_%i.state:%s\n",$ctl,$drv,$binding;
+ 		printf "raid.oem.areca.controller.%i.slot_%i.drv:%i\n",$ctl,$slot,$drv;
+		printf "raid.oem.areca.controller.%i.slot_%i.size:%i\n",$ctl,$slot,$size;
+		printf "raid.oem.areca.controller.%i.slot_%i.model:%i\n",$ctl,$slot,$model;
+		printf "raid.oem.areca.controller.%i.slot_%i.binding:%i\n",$ctl,$slot,$binding;
  	}
- }
  printf "raid.oem.areca.controller.%i.free:%i\n",$ctl,$free;
  printf "raid.oem.areca.controller.%i.failed:%i\n",$ctl,$failed;
+ }
 }

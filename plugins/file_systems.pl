@@ -29,6 +29,7 @@ foreach $line (sort @mounts) {
     next if ($line =~ /tmpfs/);
     next if ($line =~ /^fusectl/);
     next if ($line =~ /cifs/);
+    next if ($line =~ /^cgroup/);
     next if ($line =~ /rpc_pipefs/);
     next if ($line =~ /binfmt_misc/);
 
@@ -130,7 +131,7 @@ foreach $de (sort keys {%$h}) {
 	foreach $d (sort keys %{$h->{$de}}) {
 		@d=split(/\//,$de);
 		$dev = pop @d;
-		printf "mount.%s.%s:%s\n",$dev,$d,$h->{$de}->{$d};
+		printf "filesys.device.%s.%s:%s\n",$dev,$d,$h->{$de}->{$d};
 	}
 }
 

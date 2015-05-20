@@ -5,5 +5,5 @@ my ($rc,$u,$n);
 
 chomp($rc = `cat /proc/uptime`);
 if ($rc =~ /(\d+\.\d+)\s+(\d+\.\d+)/) {
-   printf "uptime:%.2f\n",$1;
+   printf "system.uptime:%.2f\n",$1;
 }
