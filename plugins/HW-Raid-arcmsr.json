@@ -1,0 +1,11 @@
+# config-file-type: JSON 1
+{
+  "metric": {
+	      "enabled" 	: 1,
+	      "command" 	: "plugins/HW-Raid-arcmsr.pl",
+	      "interval"	: 300,
+	      "timeout" 	: 120,
+	      "persistent" 	: 0,
+        "xmit"       	: 1
+  }
+}

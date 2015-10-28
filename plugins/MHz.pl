@@ -1,11 +1,25 @@
 #!/usr/bin/perl
 
 use strict;
-my ($rc,@f,$i);
+$|=1;
 
-chomp($rc = `cat /proc/cpuinfo | grep MHz | cut -d":" -f2`);
-@f = split(/\n/,$rc);
-foreach $i (0 ..$#f) {
- $f[$i] =~ s/^\s+//; # trim leading spaces
- printf "system.cpu.frequency.processor.%i:%s\n",$i,$f[$i];
+my ($rc,@f,@g,$i,$ndx,$out);
+
+while (1) {
+  $ndx = 0;
+  printf "\n#### sync:%i\n",time;
+  @f = split(/\n/,`cat /proc/cpuinfo`);
+  $out = "cpu_clock ";
+  foreach $i (@f) {
+    if ($i =~ /cpu MHz\s+\:\s+(\d+\.\d+)/)
+      {
+        $out .= "," if ($ndx > 0);
+        $out .= sprintf "f%i=%.1f",$ndx,$1;
+        $ndx++;
+      }
+  }
+  printf "%s\n",$out;
+  sleep(5);
 }
+
+ 

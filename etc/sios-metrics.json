@@ -7,82 +7,19 @@
     },
     "db" : {
 	"default" : {
-      			"host"    : "192.168.5.117",
-      			"port"    : "2003",
-      			"proto"   : "tcp"
+      			"host"    : "10.1.1.250",
+      			"port"    : "8086",
+      			"proto"   : "http",
+			"db"	  : "unison"
 		    },
 	"second" : {
                         "host"    : "192.168.101.250",
                         "port"    : "2003",
-                        "proto"   : "tcp" 
+                        "proto"   : "tcp",
+			"db"      : "fastpath"
                     },
     },
-   "metrics" : {      
-      "uptime" : {
-	  "db"	      : ["default","second"],
-	  "enabled"   : 0,
-          "command"   : "plugins/uptime.pl",
-          "interval"  : 5,
-          "timeout"   : 2                
-      },
-      "MHz" : {
-	  "enabled"   : 0,
-          "command"   : "plugins/MHz.pl",
-          "interval"  : 4,
-          "timeout"   : 2                
-      },
-      "HW-Raid" : {
-	  "enabled"   : 0,
-          "command"   : "plugins/HW-Raid.pl",
-          "interval"  : 300,
-          "timeout"   : 60
-      },
-      "HWR-disks" : {
-	  "enabled"   : 0,
-          "command"   : "plugins/HWR-disks.pl",
-          "interval"  : 300,
-          "timeout"   : 150
-      },
-      "beegfs" : {
-	       "enabled"   : 0,
-	       "command"   : "plugins/beegfs.pl",
-	       "persistent" : 1,
-	       "interval"   : 1,
-               "timeout"    : 60
-      },
-      "ptest" : {
-               "enabled"   : 1,
-               "command"   : "plugins/ptest.pl",
-               "persistent" : 1,
-               "interval"   : 1,
-	       "xmit"	    : 0,
-               "timeout"    : 60
-      },
-      "bw_iops" : {
-               "enabled"   : 0,
-               "command"   : "plugins/disk_BW_IOPS.pl",
-               "persistent" : 1,
-               "interval"   : 1,
-               "xmit"       : 1,
-               "timeout"    : 30
-      },
-      "mdadm" : {
-         "enabled"    : 0,
-         "command"    : "plugins/mdadm.pl",
-         "interval"   : 300,
-         "timeout"    : 30
-      },
-      "smart" : {
-         "enabled"    : 0,
-         "command"    : "plugins/smart-disks.pl",
-         "interval"   : 3600,
-         "timeout"    : 300
-      },
-      "filesys" : {
-         "enabled"    : 0,
-         "command"    : "plugins/file_systems.pl",
-         "interval"   : 300,
-         "timeout"    : 60
-      },
+   "metrics" : {
+     "plugin_dirs" : ["plugins/"]
    } 
 }

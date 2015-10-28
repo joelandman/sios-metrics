@@ -1,0 +1,11 @@
+# config-file-type: JSON 1
+{
+  "metric": {
+	      "enabled" 	: 1,
+	      "command" 	: "plugins/pfs_performance.pl",
+	      "interval"	: 1,
+	      "timeout" 	: 20,
+	      "persistent" 	: 1,
+              "xmit"       	: 1
+  },
+}

@@ -4,10 +4,11 @@ use strict;
 use File::Temp;
 use File::Spec;
 use File::Path qw(make_path remove_tree);
+$|=1;
 
 my ($line,@mounts,$mount,$fs,$path,$temp,$h,$de,$d);
 my (@mrec,$test,$fh,$fname,$nread,$nwrite,$in,$dev,@d);
-my ($tdir,@time_array,$nseek,$rcrc);
+my ($tdir,@time_array,$nseek,$rcrc,$_d,$out,$first);
 
 my $buffer = " " x (1024*1024) ;  # 1MB of spaces
 my $crc    = &crc32($buffer);     # calculate crc
@@ -20,7 +21,7 @@ foreach $line (sort @mounts) {
     next if ($line =~ /^tmpfs/);
     next if ($line =~ /^rootfs/);
     next if ($line =~ /^nfsd/);
-    next if ($line =~ /^udev/); 
+    next if ($line =~ /^udev/);
     next if ($line =~ /^devpts/);
     next if ($line =~ /^proc/);
     next if ($line =~ /^sys/);
@@ -32,11 +33,17 @@ foreach $line (sort @mounts) {
     next if ($line =~ /^cgroup/);
     next if ($line =~ /rpc_pipefs/);
     next if ($line =~ /binfmt_misc/);
-
+    next if ($line =~ /gvfsd/);
+    next if ($line =~ /autofs/);
+    next if ($line =~ /securityfs/);
+    next if ($line =~ /debugfs/);
+    next if ($line =~ /^none/);
+    
     @mrec=split(/\s+/,$line);
-    $h->{$mrec[0]}->{mountpoint}=$mrec[1];
-    $h->{$mrec[0]}->{fstype}=$mrec[2];
-    $h->{$mrec[0]}->{options}=$mrec[3];
+    next if ($mrec[1] =~ /^\/$/);
+    $h->{$mrec[0]}->{mountpoint}=sprintf '"%s"',$mrec[1];
+    $h->{$mrec[0]}->{fstype}=sprintf '"%s"',$mrec[2];
+    #$h->{$mrec[0]}->{options}=sprintf '"%s"',$mrec[3];
     $test = File::Temp->new();
     $test->unlink_on_destroy(1);
     @time_array = localtime(time);
@@ -49,10 +56,10 @@ foreach $line (sort @mounts) {
           make_path($tdir) if (! -d $tdir);
          };
     if ($@) {
-        $h->{$mrec[0]}->{make_directory} = "failed";
+        $h->{$mrec[0]}->{make_directory} = "F";
 	next;
     }
-    $h->{$mrec[0]}->{make_directory} = "passed";
+    $h->{$mrec[0]}->{make_directory} = "T";
     eval {
            ($fh,$fname) = $test->tempfile("rw_monitoring.XXXXXXXX",
 					  DIR=>$tdir,
@@ -60,14 +67,14 @@ foreach $line (sort @mounts) {
 					 );
 	 };
     if ($@) {
-        $h->{$mrec[0]}->{make_temp_file} = "failed";
+        $h->{$mrec[0]}->{make_temp_file} = "F";
         next;
     }
-    $h->{$mrec[0]}->{make_temp_file} = "passed" ;
-    
-    $h->{$mrec[0]}->{write_test} 	= "passed";    
-    $h->{$mrec[0]}->{seek_test} 	= "passed";
-    $h->{$mrec[0]}->{read_test} 	= "passed";
+    $h->{$mrec[0]}->{make_temp_file} = "T" ;
+
+    $h->{$mrec[0]}->{write_test} 	= "T";
+    $h->{$mrec[0]}->{seek_test} 	= "T";
+    $h->{$mrec[0]}->{read_test} 	= "T";
     eval {
            local $SIG{ALRM} = sub { die "alarm\n" }; # NB: \n required
            alarm $timeout;
@@ -76,18 +83,18 @@ foreach $line (sort @mounts) {
            alarm 0;
          };
     if ($@) {
-	$h->{$mrec[0]}->{write_test} = "failed";
+	$h->{$mrec[0]}->{write_test} = "F";
         next;
     }
     eval {
            local $SIG{ALRM} = sub { die "alarm\n" }; # NB: \n required
            alarm $timeout;
            $nseek = sysseek $fh, 0, 0;
-           $h->{$mrec[0]}->{seek_after_write} = ($nseek =~ /0 but true/ ? "passed" : "failed");
+           $h->{$mrec[0]}->{seek_after_write} = ($nseek =~ /0 but true/ ? "T" : "F");
            alarm 0;
          };
     if ($@) {
-        $h->{$mrec[0]}->{seek_test} = "failed";
+        $h->{$mrec[0]}->{seek_test} = "F";
 	next;
     }
     eval {
@@ -98,41 +105,52 @@ foreach $line (sort @mounts) {
            alarm 0;
          };
     if ($@) {
-        $h->{$mrec[0]}->{read_test} = "failed";
+        $h->{$mrec[0]}->{read_test} = "F";
         next;
-    } 
+    }
     # check crc32 against what we calculated previously for the buffer.  If they
-    # match add a "crc = passed" 
-    $h->{$mrec[0]}->{crc} = "failed";
+    # match add a "crc = T"
+    $h->{$mrec[0]}->{crc} = "F";
     $rcrc = &crc32($in);
-    if ($rcrc == $crc) {$h->{$mrec[0]}->{crc} = "passed"; }
+    if ($rcrc == $crc) {$h->{$mrec[0]}->{crc} = "T"; }
     undef $test;
     eval {
           unlink($fname) if (-e $fname);
          };
     if ($@) {
-        $h->{$mrec[0]}->{remove_temp_file} = "failed";
+        $h->{$mrec[0]}->{remove_temp_file} = "F";
         next;
     }
-    $h->{$mrec[0]}->{remove_temp_file} = "passed";
+    $h->{$mrec[0]}->{remove_temp_file} = "T";
 
     eval {
           remove_tree($tdir) if (-d $tdir);
          };
     if ($@) {
-        $h->{$mrec[0]}->{remove_temp_directory} = "failed";
+        $h->{$mrec[0]}->{remove_temp_directory} = "F";
         next;
-    }   
-    $h->{$mrec[0]}->{remove_temp_directory} = "passed";
-}    
+    }
+    $h->{$mrec[0]}->{remove_temp_directory} = "T";
+}
 
 # now loop over all the hash elements and return the values in sorted disk/key order
-foreach $de (sort keys {%$h}) {
-	foreach $d (sort keys %{$h->{$de}}) {
-		@d=split(/\//,$de);
-		$dev = pop @d;
-		printf "filesys.device.%s.%s:%s\n",$dev,$d,$h->{$de}->{$d};
-	}
+foreach $de (sort keys %{$h}) {
+  @d=split(/\//,$de);
+  $dev = pop @d;
+  $out = sprintf "fs,dev=%s,fstype=%s,mountpoint=%s ",
+    $dev,
+    $h->{$de}->{fstype},
+    $h->{$de}->{mountpoint},;
+  delete $h->{$de}->{fstype};
+  delete $h->{$de}->{mountpoint};
+  $first = 1;
+  foreach $_d (sort keys %{$h->{$de}})
+  {
+    $out .= "," if (!$first);
+    $out .= (sprintf "%s=%s",$_d,$h->{$de}->{$_d});
+    $first = 0;
+  }
+	printf "%s\n",$out;
 }
 
 # from http://billauer.co.il/blog/2011/05/perl-crc32-crc-xs-module/

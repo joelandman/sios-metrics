@@ -1,0 +1,11 @@
+# config-file-type: JSON 1
+{
+  "metric": {
+	      "enabled" 	: 1,
+	      "command" 	: "plugins/MHz.pl",
+	      "interval"	: 5,
+	      "timeout" 	: 2,
+	      "persistent" 	: 1,
+              "xmit"       	: 1
+  },
+}

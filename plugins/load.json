@@ -1,0 +1,19 @@
+# config-file-type: JSON 1
+{
+  "metric": {
+	      "enabled" 	: 1,
+	      "command" 	: "plugins/load.pl",
+	      "interval"	: 1,
+	      "timeout" 	: 5,
+	      "persistent" 	: 1,
+        "xmit"       	: 1
+  },
+  "alerts" : {
+	"highload1m" : {
+		  "condition" : "_load1m_ > 64.",
+		  "message"   : "Warning: CPU load greater than 64",
+		  "severity"  : 5,
+		  "action"    : ["alert"]
+	},
+  },
+}

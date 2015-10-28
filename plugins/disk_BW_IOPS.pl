@@ -11,7 +11,7 @@ use Time::HiRes qw(usleep);
 use Data::Dumper;
 
 #
-my $vers    = "0.5";
+my $vers    = "1.5";
 
 # variables
 my ($opt,$rc,$version,$thr);
@@ -70,22 +70,24 @@ do
 	 {
 		$read		= $dev_delta->{$blockdev}->{3}*$sector_size/$interval;
 		$write		= $dev_delta->{$blockdev}->{7}*$sector_size/$interval;
-		$riop 		= ($dev_delta->{$blockdev}->{1}+$dev_delta->{$blockdev}->{2})/$interval; 
-		$wiop 		= ($dev_delta->{$blockdev}->{5}+$dev_delta->{$blockdev}->{6})/$interval; 
+		$riop 		= ($dev_delta->{$blockdev}->{1})/$interval; 
+		$wiop 		= ($dev_delta->{$blockdev}->{5})/$interval; 
 		$trbw		+= $read;
 		$twbw		+= $write;
 		$triops		+= $riop;
 		$twiops		+= $wiop;
-		printf "disk.read_BW.%s:%f\ndisk.write_BW.%s:%f\ndisk.total_BW.%s:%f\ndisk.read_IOP.%s:%f\ndisk.write_IOP.%s:%f\n",
-		$blockdev,$read/$MB,
-		$blockdev,$write/$MB,
-		$blockdev,($read+$write)/$MB,
-		$blockdev,$riop,
-		$blockdev,$wiop;
+		printf "storage,device=%s,measurement=unit read_bw=%f,write_bw=%f,total_bw=%f,read_iop=%i,write_iop=%i,total_iop=%i\n",
+		$blockdev,
+		$read/$MB,
+		$write/$MB,
+		($read+$write)/$MB,
+		$riop,
+		$wiop,
+		($riop+$wiop);
 	 }
 	
-	printf "disk.read_BW.total:%f\ndisk.write_BW.total:%f\ndisk.read_IOP.total:%f\ndisk.write_IOP.total:%f\n\n",
-		$trbw/$MB,$twbw/$MB,$triops,$twiops;
+	printf "storage,measurement=total read_bw=%f,write_bw=%f,total_bw=%f,read_iop=%i,write_iop=%i,total_iop=%i\n",
+		$trbw/$MB,$twbw/$MB,($trbw+$twbw)/$MB,$triops,$twiops,($triops + $twiops);
 	}
 	
 	$firstpass = false;

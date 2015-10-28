@@ -1,0 +1,19 @@
+# config-file-type: JSON 1
+{
+  "metric": {
+	      "enabled" 	: 1,
+	      "command" 	: "plugins/cputemp.pl",
+	      "interval"	: 1,
+	      "timeout" 	: 2,
+	      "persistent" 	: 1,
+              "xmit"       	: 1
+  },
+  "alerts" : {
+	"hot" : { 
+		  "condition" : "_value_ > 80.0",  
+		  "message"   : "Warning: CPU temp greater than 80",
+		  "severity"  : 5,
+		  "action"    : ["alert"]
+	},
+  },
+}

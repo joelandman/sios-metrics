@@ -1,0 +1,11 @@
+# config-file-type: JSON 1
+{
+  "metric": {
+	      "enabled" 	: 1,
+	      "command" 	: "plugins/disk_BW_IOPS.pl",
+	      "interval"	: 1,
+	      "timeout" 	: 60,
+	      "persistent" 	: 1,
+              "xmit"       	: 1
+  }
+}

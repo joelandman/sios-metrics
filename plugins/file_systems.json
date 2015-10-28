@@ -1,0 +1,11 @@
+# config-file-type: JSON 1
+{
+  "metric": {
+	      "enabled" 	: 1,
+	      "command" 	: "plugins/file_systems.pl",
+	      "interval"	: 60,
+	      "timeout" 	: 120,
+	      "persistent" 	: 0,
+              "xmit"       	: 1
+  }
+}
