@@ -1,12 +1,14 @@
-package Scalable::TSDB;
+package Scalable::TSDB::InfluxDB;
 
 use Moose;
+
 use URI::Escape;
 use LWP::UserAgent;
 use MIME::Base64;
 
 use List::MoreUtils qw(first_index);
 use Time::HiRes qw( gettimeofday tv_interval );
+
 
 has 'host' => ( is => 'rw', isa => 'Str');
 has 'port' => ( is => 'rw', isa => 'Int');
@@ -18,13 +20,13 @@ has 'debug'=> ( is => 'rw', isa => 'Bool');
 has 'suppress_id'=> ( is => 'rw', isa => 'Bool');
 has 'suppress_seq'=> ( is => 'rw', isa => 'Bool');
 
+
 use constant true 	=> (1==1);
 use constant false 	=> (1==0);
 
 
 sub connect_db {
 	my $self 	= shift;
-	#my $url		= $self->_generate_url;
 	return true;
 }
 
@@ -97,5 +99,7 @@ sub _write_data {
 
 	return $return;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;

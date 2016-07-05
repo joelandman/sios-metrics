@@ -10,14 +10,24 @@
       			"host"    : "10.1.1.250",
       			"port"    : "8086",
       			"proto"   : "http",
-			"db"	  : "unison"
+			"db"	  : "unison",
+			"dbtype"  : "influxdb"
 		    },
 	"second" : {
                         "host"    : "192.168.101.250",
                         "port"    : "2003",
                         "proto"   : "tcp",
-			"db"      : "fastpath"
+			"db"      : "fastpath",
+			"dbtype"  : "influxdb"
+
                     },
+	"kdb"    : {
+			"host"    : "192.168.101.250",
+                        "port"    : "21000",
+                        "proto"   : "tcp",
+                        "db"      : "unison",
+			"dbtype"  : "kdb"
+		},
     },
    "metrics" : {
      "plugin_dirs" : ["plugins/"]

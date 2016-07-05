@@ -11,7 +11,8 @@ use Getopt::Lucid qw( :all );
 use POSIX qw[strftime];
 use SI::Utils;
 use lib "lib/";
-use Scalable::TSDB;
+use Scalable::TSDB::InfluxDB;
+use Scalable::TSDB::kdb;
 
 use IPC::Run qw( start pump finish timeout run harness );
 use Data::Dumper;
@@ -50,7 +51,7 @@ my @list_of_metrics   : shared;
 my $run_dir           : shared;
 my (@metrics,$metric,$thr_name,$met,$metrics_hash);
 my (%mtr,$proto,$port,$mfh,$mstate);
-my ($host,$user,$pass,$output,$config_file,$cf_h);
+my ($host,$user,$pass,$output,$config_file,$cf_h,$dbs,@tdbns);
 my ($config,$c,$_fqpni,$nolog);
 my $shared_sig	  : shared;
 my $restart	      : shared;
@@ -58,7 +59,7 @@ my @plugin_dirs   : shared;
 my $pconfig       : shared;
 my %pconf 	  ;
 my @metric_buffer : shared;
-my ($tick,@dbuf,@_mbufk,$db,$tsdb,$_dbrc);
+my ($tick,@dbuf,@_mbufk,$db,$tsdb,$_dbrc,$dbtype);
 
 chomp($hostname   = `hostname`);
 
@@ -143,8 +144,7 @@ $metrics_hash 	= \%pconf;
 # initial allocation of metric buffer space for send
 #map {$metric_buffer{$_} = 8192 x " " ;} @metrics;
 
-# start time stamp thread
-$thr->{TS}                      = threads->create({'void' => 1},'TS');
+
 
 # find metrics through directory list in config file
 
@@ -152,18 +152,39 @@ $thr->{TS}                      = threads->create({'void' => 1},'TS');
 
 
 # set host, port, proto from global
-$host           = $config->{'config'}->{'db'}->{'default'}->{'host'} || '127.0.0.1';
-$port           = $config->{'config'}->{'db'}->{'default'}->{'port'} || '8086';
-$proto          = $config->{'config'}->{'db'}->{'default'}->{'proto'} || 'tcp';
-$db             = $config->{'config'}->{'db'}->{'default'}->{'db'}  || 'unison';
-
-$tsdb   = Scalable::TSDB->new({
+$dbs = $config->{'config'}->{'db'};
+foreach my $dbn (keys %{$dbs}) {
+  $host           = $dbs->{$dbn}->{'host'}  ;
+  $port           = $dbs->{$dbn}->{'port'}  ;
+  $proto          = $dbs->{$dbn}->{'proto'}  ;
+  $db             = $dbs->{$dbn}->{'db'}    ;
+  $dbtype         = $dbs->{$dbn}->{'dbtype'}    ;
+  printf STDERR "D[%i] h=%s, p=%s, pr=%s, db=%s, dbt=%s\n",$$,$host,$port,$proto,$db,$dbtype if ($debug);
+  if ($dbtype =~ /influxdb/i) {
+	$tsdb->{$dbn}   = Scalable::TSDB::InfluxDB->new({
                           host  => $host,
                           port  => $port,
                           proto => $proto,
                           db    => $db,
                           debug => $debug
                          });
+     }
+    else
+     {
+	$tsdb->{$dbn}   = Scalable::TSDB::kdb->new({
+                          host  => $host,
+                          port  => $port,
+                          proto => $proto,
+                          db    => $db,
+                          debug => $debug
+                         });
+     }
+     push @tdbns,$dbn;
+}
+
+
+# start time stamp thread
+$thr->{TS}                      = threads->create({'void' => 1},'TS');
 
 
 foreach $metric (@metrics)
@@ -197,7 +218,7 @@ do {
    if ($tick == 9) {
 	# 1) gather buffers into one large send buffer, and erase shared buffer
 	#    for each metric
-	# 2) send data
+	# 2) send data to each time series data base
 
       #### 1
       undef @dbuf ;
@@ -208,9 +229,11 @@ do {
       map { delete $metric_buffer[$_]} 0 .. $_length;
 
       #### 2
-      $_dbrc = $tsdb->_write_data(\@dbuf);
-      printf STDERR "D[%i] send: rc = %s, dt = %.6fs\n\tmessage = \'%s\'\n\tcontent = \'%s\'\n",
-        $$,$_dbrc->{code},$_dbrc->{time},$_dbrc->{message},$_dbrc->{content} if ($debug);
+      foreach my $_tdbn (@tdbns) {
+	$_dbrc = $tsdb->{$_tdbn}->_write_data(\@dbuf);
+	printf STDERR "D[%i] send(%s): rc = %s, dt = %.6fs\n\tmessage = \'%s\'\n\tcontent = \'%s\'\n",
+        $$,$_tdbn,$_dbrc->{code},$_dbrc->{time},$_dbrc->{message},$_dbrc->{content} if ($debug);
+      }
 
    }
    $tick++;
@@ -532,7 +555,7 @@ sub read_config {
 sub read_plugin_configs_from_directory_list {
   my @paths = @_;
   my (%dir,$plugin,$fn,$pn,$path,%h);
-  
+
   foreach $path (@paths) {
     printf STDERR "D[%i] read_plugin_configs_from_directory: path = \'%s\'\n",
       $$,$path if ($debug);
